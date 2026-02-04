@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Analysis Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .stat-value {
+            color: #333;
+            font-size: 32px;
+            font-weight: 600;
+        }
+        
+        .stat-value.danger {
+            color: #d32f2f;
+        }
+        
+        .attacks-section {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .attacks-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        
+        .attack-type {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .attack-type:last-child {
+            border-bottom: none;
+        }
+        
+        .attack-type h3 {
+            color: #555;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .attack-item {
+            background: #f9f9f9;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            border-left: 4px solid #d32f2f;
+        }
+        
+        .attack-item.warning {
+            border-left-color: #f57c00;
+        }
+        
+        .ip {
+            font-family: 'Courier New', monospace;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .detail {
+            color: #666;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        
+        button {
+            background: #333;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 15px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        
+        button:hover {
+            background: #555;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .no-attacks {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 Log Analysis Dashboard</h1>
+            <p class="subtitle">Detect and analyze suspicious activity in web server logs</p>
+        </header>
+        
+        <button onclick="analyzeLog()">Analyze Sample Logs</button>
+        
+        <div class="loading" id="loading">Analyzing logs...</div>
+        
+        <div id="results" style="display: none;">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Requests</div>
+                    <div class="stat-value" id="totalRequests">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Unique IPs</div>
+                    <div class="stat-value" id="uniqueIPs">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Attacks Detected</div>
+                    <div class="stat-value danger" id="totalAttacks">0</div>
+                </div>
+            </div>
+            
+            <div class="attacks-section">
+                <h2>Detected Threats</h2>
+                
+                <div class="attack-type" id="bruteForceSection">
+                    <h3>Brute Force Attacks</h3>
+                    <div id="bruteForceList"></div>
+                </div>
+                
+                <div class="attack-type" id="sqlInjectionSection">
+                    <h3>SQL Injection Attempts</h3>
+                    <div id="sqlInjectionList"></div>
+                </div>
+                
+                <div class="attack-type" id="pathTraversalSection">
+                    <h3>Path Traversal Attempts</h3>
+                    <div id="pathTraversalList"></div>
+                </div>
+                
+                <div class="attack-type" id="scanningSection">
+                    <h3>Scanning Activity</h3>
+                    <div id="scanningList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        async function analyzeLog() {
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                // Hide loading
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('results').style.display = 'block';
+                
+                // Update stats
+                document.getElementById('totalRequests').textContent = data.total_requests;
+                document.getElementById('uniqueIPs').textContent = data.unique_ips;
+                document.getElementById('totalAttacks').textContent = data.total_attacks;
+                
+                // Display brute force attacks
+                const bruteForceList = document.getElementById('bruteForceList');
+                bruteForceList.innerHTML = '';
+                if (Object.keys(data.brute_force).length > 0) {
+                    for (const [ip, count] of Object.entries(data.brute_force)) {
+                        bruteForceList.innerHTML += `
+                            <div class="attack-item">
+                                <span class="ip">${ip}</span>
+                                <div class="detail">${count} failed login attempts detected</div>
+                            </div>
+                        `;
+                    }
+                } else {
+                    bruteForceList.innerHTML = '<div class="no-attacks">No brute force attacks detected</div>';
+                }
+                
+                // Display SQL injection attempts
+                const sqlList = document.getElementById('sqlInjectionList');
+                sqlList.innerHTML = '';
+                if (data.sql_injection.length > 0) {
+                    data.sql_injection.forEach(attack => {
+                        sqlList.innerHTML += `
+                            <div class="attack-item">
+                                <span class="ip">${attack.ip}</span>
+                                <div class="detail">Path: ${attack.path}</div>
+                                <div class="detail">Time: ${attack.timestamp}</div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    sqlList.innerHTML = '<div class="no-attacks">No SQL injection attempts detected</div>';
+                }
+                
+                // Display path traversal attempts
+                const pathList = document.getElementById('pathTraversalList');
+                pathList.innerHTML = '';
+                if (data.path_traversal.length > 0) {
+                    data.path_traversal.forEach(attack => {
+                        pathList.innerHTML += `
+                            <div class="attack-item">
+                                <span class="ip">${attack.ip}</span>
+                                <div class="detail">Path: ${attack.path}</div>
+                                <div class="detail">Time: ${attack.timestamp}</div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    pathList.innerHTML = '<div class="no-attacks">No path traversal attempts detected</div>';
+                }
+                
+                // Display scanning activity
+                const scanList = document.getElementById('scanningList');
+                scanList.innerHTML = '';
+                if (Object.keys(data.scanning).length > 0) {
+                    for (const [ip, count] of Object.entries(data.scanning)) {
+                        scanList.innerHTML += `
+                            <div class="attack-item warning">
+                                <span class="ip">${ip}</span>
+                                <div class="detail">${count} pages scanned (potential reconnaissance)</div>
+                            </div>
+                        `;
+                    }
+                } else {
+                    scanList.innerHTML = '<div class="no-attacks">No scanning activity detected</div>';
+                }
+                
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                alert('Error analyzing logs: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
