@@ -50,3 +50,17 @@ def parse_log_file(filepath):
         print(f"Error parsing log file: {e}")
         return []
 
+# Test the parser
+if __name__ == "__main__":
+    entries = parse_log_file('static/sample_logs.txt')
+    
+    print(f"Parsed {len(entries)} log entries\n")
+    
+    # Print first 3 entries as example
+    for i, entry in enumerate(entries[:3], 1):
+        print(f"Entry {i}:")
+        print(f"  IP: {entry['ip']}")
+        print(f"  Time: {entry['timestamp']}")
+        print(f"  Request: {entry['method']} {entry['path']}")
+        print(f"  Status: {entry['status']}")
+        print()
