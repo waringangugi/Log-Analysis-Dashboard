@@ -163,7 +163,12 @@
             <p class="subtitle">Detect and analyze suspicious activity in web server logs</p>
         </header>
 
-        <button onclick="analyzeLog()">Analyze Sample Logs</button>
+        <div style="margin-bottom: 20px;">
+            <button onclick="analyzeLog()">Analyze Sample Logs</button>
+            <button onclick="document.getElementById('fileInput').click()" style="margin-left: 10px;">Upload & Analyze
+                Your Logs</button>
+            <input type="file" id="fileInput" accept=".txt,.log" style="display: none;" onchange="uploadAndAnalyze()">
+        </div>
 
         <div class="loading" id="loading">Analyzing logs...</div>
 
@@ -199,22 +204,22 @@
                 <h2>Detected Threats</h2>
 
                 <div class="attack-type" id="bruteForceSection">
-                    <h3>🔐 Brute Force Attacks</h3>
+                    <h3>Brute Force Attacks</h3>
                     <div id="bruteForceList"></div>
                 </div>
 
                 <div class="attack-type" id="sqlInjectionSection">
-                    <h3>💉 SQL Injection Attempts</h3>
+                    <h3>SQL Injection Attempts</h3>
                     <div id="sqlInjectionList"></div>
                 </div>
 
                 <div class="attack-type" id="pathTraversalSection">
-                    <h3>📁 Path Traversal Attempts</h3>
+                    <h3>Path Traversal Attempts</h3>
                     <div id="pathTraversalList"></div>
                 </div>
 
                 <div class="attack-type" id="scanningSection">
-                    <h3>🔎 Scanning Activity</h3>
+                    <h3>Scanning Activity</h3>
                     <div id="scanningList"></div>
                 </div>
             </div>
@@ -253,11 +258,11 @@
                 if (Object.keys(data.brute_force).length > 0) {
                     for (const [ip, count] of Object.entries(data.brute_force)) {
                         bruteForceList.innerHTML += `
-                            <div class="attack-item">
-                                <span class="ip">${ip}</span>
-                                <div class="detail">${count} failed login attempts detected</div>
-                            </div>
-                        `;
+                        <div class="attack-item">
+                            <span class="ip">${ip}</span>
+                            <div class="detail">${count} failed login attempts detected</div>
+                        </div>
+                    `;
                     }
                 } else {
                     bruteForceList.innerHTML = '<div class="no-attacks">No brute force attacks detected</div>';
@@ -269,12 +274,12 @@
                 if (data.sql_injection.length > 0) {
                     data.sql_injection.forEach(attack => {
                         sqlList.innerHTML += `
-                            <div class="attack-item">
-                                <span class="ip">${attack.ip}</span>
-                                <div class="detail">Path: ${attack.path}</div>
-                                <div class="detail">Time: ${attack.timestamp}</div>
-                            </div>
-                        `;
+                        <div class="attack-item">
+                            <span class="ip">${attack.ip}</span>
+                            <div class="detail">Path: ${attack.path}</div>
+                            <div class="detail">Time: ${attack.timestamp}</div>
+                        </div>
+                    `;
                     });
                 } else {
                     sqlList.innerHTML = '<div class="no-attacks">No SQL injection attempts detected</div>';
@@ -286,12 +291,12 @@
                 if (data.path_traversal.length > 0) {
                     data.path_traversal.forEach(attack => {
                         pathList.innerHTML += `
-                            <div class="attack-item">
-                                <span class="ip">${attack.ip}</span>
-                                <div class="detail">Path: ${attack.path}</div>
-                                <div class="detail">Time: ${attack.timestamp}</div>
-                            </div>
-                        `;
+                        <div class="attack-item">
+                            <span class="ip">${attack.ip}</span>
+                            <div class="detail">Path: ${attack.path}</div>
+                            <div class="detail">Time: ${attack.timestamp}</div>
+                        </div>
+                    `;
                     });
                 } else {
                     pathList.innerHTML = '<div class="no-attacks">No path traversal attempts detected</div>';
@@ -303,11 +308,11 @@
                 if (Object.keys(data.scanning).length > 0) {
                     for (const [ip, count] of Object.entries(data.scanning)) {
                         scanList.innerHTML += `
-                            <div class="attack-item warning">
-                                <span class="ip">${ip}</span>
-                                <div class="detail">${count} pages scanned (potential reconnaissance)</div>
-                            </div>
-                        `;
+                        <div class="attack-item warning">
+                            <span class="ip">${ip}</span>
+                            <div class="detail">${count} pages scanned (potential reconnaissance)</div>
+                        </div>
+                    `;
                     }
                 } else {
                     scanList.innerHTML = '<div class="no-attacks">No scanning activity detected</div>';
@@ -419,6 +424,122 @@
                     }
                 }
             });
+        }
+
+        async function uploadAndAnalyze() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('logfile', file);
+
+            try {
+                const response = await fetch('/analyze-upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to analyze file');
+                }
+
+                const data = await response.json();
+
+                // Hide loading
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('results').style.display = 'block';
+
+                // Update stats
+                document.getElementById('totalRequests').textContent = data.total_requests;
+                document.getElementById('uniqueIPs').textContent = data.unique_ips;
+                document.getElementById('totalAttacks').textContent = data.total_attacks;
+
+                // Display brute force attacks
+                const bruteForceList = document.getElementById('bruteForceList');
+                bruteForceList.innerHTML = '';
+                if (Object.keys(data.brute_force).length > 0) {
+                    for (const [ip, count] of Object.entries(data.brute_force)) {
+                        bruteForceList.innerHTML += `
+                        <div class="attack-item">
+                            <span class="ip">${ip}</span>
+                            <div class="detail">${count} failed login attempts detected</div>
+                        </div>
+                    `;
+                    }
+                } else {
+                    bruteForceList.innerHTML = '<div class="no-attacks">No brute force attacks detected</div>';
+                }
+
+                // Display SQL injection attempts
+                const sqlList = document.getElementById('sqlInjectionList');
+                sqlList.innerHTML = '';
+                if (data.sql_injection.length > 0) {
+                    data.sql_injection.forEach(attack => {
+                        sqlList.innerHTML += `
+                        <div class="attack-item">
+                            <span class="ip">${attack.ip}</span>
+                            <div class="detail">Path: ${attack.path}</div>
+                            <div class="detail">Time: ${attack.timestamp}</div>
+                        </div>
+                    `;
+                    });
+                } else {
+                    sqlList.innerHTML = '<div class="no-attacks">No SQL injection attempts detected</div>';
+                }
+
+                // Display path traversal attempts
+                const pathList = document.getElementById('pathTraversalList');
+                pathList.innerHTML = '';
+                if (data.path_traversal.length > 0) {
+                    data.path_traversal.forEach(attack => {
+                        pathList.innerHTML += `
+                        <div class="attack-item">
+                            <span class="ip">${attack.ip}</span>
+                            <div class="detail">Path: ${attack.path}</div>
+                            <div class="detail">Time: ${attack.timestamp}</div>
+                        </div>
+                    `;
+                    });
+                } else {
+                    pathList.innerHTML = '<div class="no-attacks">No path traversal attempts detected</div>';
+                }
+
+                // Display scanning activity
+                const scanList = document.getElementById('scanningList');
+                scanList.innerHTML = '';
+                if (Object.keys(data.scanning).length > 0) {
+                    for (const [ip, count] of Object.entries(data.scanning)) {
+                        scanList.innerHTML += `
+                        <div class="attack-item warning">
+                            <span class="ip">${ip}</span>
+                            <div class="detail">${count} pages scanned (potential reconnaissance)</div>
+                        </div>
+                    `;
+                    }
+                } else {
+                    scanList.innerHTML = '<div class="no-attacks">No scanning activity detected</div>';
+                }
+
+                // Create charts
+                createCharts(data);
+
+                // Reset file input
+                fileInput.value = '';
+
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                alert('Error analyzing log file: ' + error.message);
+                fileInput.value = '';
+            }
         }
     </script>
 </body>
