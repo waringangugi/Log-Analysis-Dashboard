@@ -80,3 +80,27 @@ def detect_scanning(entries, threshold=5):
     
     return scanning_ips
 
+def analyze_logs(entries):
+    """Run all detection functions and return summary"""
+    
+    brute_force = detect_brute_force(entries)
+    sql_injection = detect_sql_injection(entries)
+    path_traversal = detect_path_traversal(entries)
+    scanning = detect_scanning(entries)
+    
+    total_attacks = (
+        len(brute_force) + 
+        len(sql_injection) + 
+        len(path_traversal) + 
+        len(scanning)
+    )
+    
+    return {
+        'total_requests': len(entries),
+        'total_attacks': total_attacks,
+        'brute_force': brute_force,
+        'sql_injection': sql_injection,
+        'path_traversal': path_traversal,
+        'scanning': scanning
+    }
+
