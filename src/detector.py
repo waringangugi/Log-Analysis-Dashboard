@@ -20,3 +20,31 @@ def detect_brute_force(entries, threshold=5):
     
     return brute_force_ips
 
+def detect_sql_injection(entries):
+    """Detect SQL injection attempts in URLs"""
+    
+    sql_patterns = [
+        r"'.*OR.*'",
+        r"'.*--",
+        r"UNION.*SELECT",
+        r"DROP.*TABLE",
+        r"';.*--",
+        r"1=1"
+    ]
+    
+    sql_injection_attempts = []
+    
+    for entry in entries:
+        path = entry['path']
+        
+        for pattern in sql_patterns:
+            if re.search(pattern, path, re.IGNORECASE):
+                sql_injection_attempts.append({
+                    'ip': entry['ip'],
+                    'path': path,
+                    'timestamp': entry['timestamp']
+                })
+                break  # Only count once per entry
+    
+    return sql_injection_attempts
+
