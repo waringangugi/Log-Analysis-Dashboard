@@ -64,3 +64,19 @@ def detect_path_traversal(entries):
     
     return path_traversal_attempts
 
+def detect_scanning(entries, threshold=5):
+    """Detect scanning/reconnaissance (many 404s from same IP)"""
+    
+    not_found_per_ip = defaultdict(int)
+    
+    for entry in entries:
+        if entry['status'] == 404:
+            not_found_per_ip[entry['ip']] += 1
+    
+    scanning_ips = {}
+    for ip, count in not_found_per_ip.items():
+        if count >= threshold:
+            scanning_ips[ip] = count
+    
+    return scanning_ips
+
