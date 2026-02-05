@@ -48,3 +48,19 @@ def detect_sql_injection(entries):
     
     return sql_injection_attempts
 
+def detect_path_traversal(entries):
+    """Detect path traversal attacks"""
+    
+    path_traversal_attempts = []
+    
+    for entry in entries:
+        # Look for ../ or ..\ patterns
+        if '../' in entry['path'] or '..\\'in entry['path']:
+            path_traversal_attempts.append({
+                'ip': entry['ip'],
+                'path': entry['path'],
+                'timestamp': entry['timestamp']
+            })
+    
+    return path_traversal_attempts
+
