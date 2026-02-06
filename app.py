@@ -43,9 +43,13 @@ def analyze():
         'scanning': results['scanning']
     })
 
-@app.route('/analyze-upload', methods=['POST'])
+@app.route('/analyze-upload', methods=['POST', 'OPTIONS'])
 def analyze_upload():
     """Analyze uploaded log file"""
+    
+    # Handle CORS preflight
+    if request.method == 'OPTIONS':
+        return '', 200
     
     try:
         print("=== Upload request received ===")
@@ -61,22 +65,26 @@ def analyze_upload():
             print("ERROR: Empty filename")
             return jsonify({'error': 'No file selected'}), 400
         
-        # Save the uploaded file
-        filename = 'uploaded_log.txt'
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        print(f"Saving to: {filepath}")
-        file.save(filepath)
-        print("File saved successfully")
+        # Read file content directly into memory (no disk save)
+        try:
+            file_content = file.read().decode('utf-8')
+            print(f"File content length: {len(file_content)} bytes")
+        except UnicodeDecodeError:
+            return jsonify({'error': 'File must be a text file (UTF-8 encoded)'}), 400
         
-        # Parse the uploaded log file
-        print("Starting to parse...")
-        entries = parse_log_file(filepath)
+        # Parse log entries from content string
+        entries = []
+        for line in file_content.splitlines():
+            line = line.strip()
+            if line:  # Skip empty lines
+                entry = parse_log_line(line)
+                if entry:
+                    entries.append(entry)
+        
         print(f"Parsed {len(entries)} entries")
         
         if not entries:
             print("ERROR: No entries parsed")
-            if os.path.exists(filepath):
-                os.remove(filepath)
             return jsonify({'error': 'Failed to parse log file. Make sure it\'s in standard Apache/Nginx format.'}), 400
         
         # Analyze for attacks
@@ -86,11 +94,6 @@ def analyze_upload():
         
         # Get unique IPs
         unique_ips = len(set(entry['ip'] for entry in entries))
-        
-        # Clean up uploaded file
-        if os.path.exists(filepath):
-            os.remove(filepath)
-            print("Cleaned up uploaded file")
         
         return jsonify({
             'total_requests': results['total_requests'],
@@ -106,13 +109,8 @@ def analyze_upload():
         print(f"EXCEPTION CAUGHT: {str(e)}")
         import traceback
         traceback.print_exc()
-        
-        # Clean up uploaded file if it exists
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], 'uploaded_log.txt')
-        if os.path.exists(filepath):
-            os.remove(filepath)
         return jsonify({'error': f'Server error: {str(e)}'}), 500
     
-
+    
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
