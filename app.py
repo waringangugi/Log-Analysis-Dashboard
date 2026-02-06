@@ -1,19 +1,24 @@
-from flask import Flask, render_template
-import os
+from flask import request, jsonify
+from src.parser import parse_log_file
+from src.detector import analyze_logs
 
-app = Flask(__name__)
+@app.route('/analyze', methods=['POST'])
+def analyze():
+    """Analyze the default sample logs"""
+    entries = parse_log_file('static/sample_logs.txt')
 
-UPLOAD_FOLDER = 'uploads'
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
+    if not entries:
+        return jsonify({'error': 'Failed to parse log file'}), 500
 
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
+    results = analyze_logs(entries)
+    unique_ips = len(set(entry['ip'] for entry in entries))
 
-@app.route('/')
-def index():
-    """Serve the dashboard"""
-    return render_template('dashboard.html')
-
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    return jsonify({
+        'total_requests': results['total_requests'],
+        'total_attacks': results['total_attacks'],
+        'unique_ips': unique_ips,
+        'brute_force': results['brute_force'],
+        'sql_injection': results['sql_injection'],
+        'path_traversal': results['path_traversal'],
+        'scanning': results['scanning']
+    })
