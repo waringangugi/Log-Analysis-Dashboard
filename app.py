@@ -2,16 +2,13 @@ from flask import Flask, render_template, request, jsonify
 from src.parser import parse_log_file, parse_log_line
 from src.detector import analyze_logs
 import os
+import tempfile
 
 app = Flask(__name__)
 
-# Configure upload folder
-UPLOAD_FOLDER = 'uploads'
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
+# Use system temp directory (works on all platforms including Render)
+app.config['UPLOAD_FOLDER'] = tempfile.gettempdir()
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 @app.route('/')
 def index():
