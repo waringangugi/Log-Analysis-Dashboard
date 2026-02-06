@@ -175,23 +175,12 @@ The application uses:
 - Python 3.11 runtime
 - Automatic builds from the main branch
 
-## Contributing
-
-This is a portfolio project, but suggestions and feedback are welcome! Feel free to open an issue or submit a pull request.
-
-## License
-
-This project is open source and available under the MIT License.
 
 ## Author
 
 **Waringa Ngugi**
 - GitHub: [@waringangugi](https://github.com/waringangugi)
 - Project: [Log Analysis Dashboard](https://github.com/waringangugi/Log-Analysis-Dashboard)
-
-## Related Projects
-
-- [Password Security Analyzer](https://github.com/waringangugi/Password-Strength-Analyzer-Generator) - Another cybersecurity portfolio project
 
 ## Future Enhancements
 
