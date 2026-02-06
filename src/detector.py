@@ -104,3 +104,29 @@ def analyze_logs(entries):
         'scanning': scanning
     }
 
+# Test the detector
+if __name__ == "__main__":
+    from parser import parse_log_file
+    
+    entries = parse_log_file('static/sample_logs.txt')
+    results = analyze_logs(entries)
+    
+    print("=== Log Analysis Results ===\n")
+    print(f"Total Requests: {results['total_requests']}")
+    print(f"Total Attacks Detected: {results['total_attacks']}\n")
+    
+    print(f"Brute Force Attacks: {len(results['brute_force'])}")
+    for ip, count in results['brute_force'].items():
+        print(f"  - {ip}: {count} failed login attempts")
+    
+    print(f"\nSQL Injection Attempts: {len(results['sql_injection'])}")
+    for attempt in results['sql_injection']:
+        print(f"  - {attempt['ip']}: {attempt['path']}")
+    
+    print(f"\nPath Traversal Attempts: {len(results['path_traversal'])}")
+    for attempt in results['path_traversal']:
+        print(f"  - {attempt['ip']}: {attempt['path']}")
+    
+    print(f"\nScanning Activity: {len(results['scanning'])}")
+    for ip, count in results['scanning'].items():
+        print(f"  - {ip}: {count} pages scanned")
