@@ -1,10 +1,12 @@
 from flask import Flask, render_template, request, jsonify
+from flask_cors import CORS
 from src.parser import parse_log_file, parse_log_line
 from src.detector import analyze_logs
 import os
 import tempfile
 
 app = Flask(__name__)
+CORS(app)
 
 # Use system temp directory (works on all platforms including Render)
 app.config['UPLOAD_FOLDER'] = tempfile.gettempdir()
@@ -111,6 +113,6 @@ def analyze_upload():
             os.remove(filepath)
         return jsonify({'error': f'Server error: {str(e)}'}), 500
     
-    
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
