@@ -2,8 +2,8 @@
 
 A full-stack web application that analyzes web server logs to detect and visualize security threats including brute force attacks, SQL injection attempts, path traversal, and reconnaissance activity.
 
-## 🔗 Live Demo
-**[Coming Soon - Will be deployed on Render]**
+## Live Demo
+**[Try it live: https://log-analysis-dashboard.onrender.com](https://log-analysis-dashboard.onrender.com)**
 
 ## Features
 
@@ -25,9 +25,6 @@ A full-stack web application that analyzes web server logs to detect and visuali
 
 
 ## Quick Start
-
-### Live Demo
-Visit the [live demo](#) to analyze logs immediately without installation.
 
 ### Local Installation
 
